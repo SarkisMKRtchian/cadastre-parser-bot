@@ -1,25 +1,28 @@
-import selenium.common.exceptions as sl_exps 
-from selenium import webdriver
 from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from telebot import types
-import telebot
+from selenium import webdriver
+from telebot import types, TeleBot
 from datetime import datetime
-import anticaptcha
-import os
-import time
-import xls
 from random import randint
+
+import selenium.common.exceptions as sl_exps 
+import anticaptcha
+import time
+import os
+
+import xls
 import log
 
-def parser_excel(cad_num: str, bot: telebot.TeleBot, chat_id: int, message_id: int, filename: str):
-    # dv_dir = os.path.join(os.getcwd(), "driver", "win", "geckodriver.exe") -> win
+def parser_excel(cad_num: str, bot: TeleBot, chat_id: int, message_id: int, filename: str):
+    date_start = datetime.now().strftime("%d.%m.%Y %H:%M:%S") # Дата и время начала обработки
+    # Для работы на windows
+    # dv_dir = os.path.join(os.getcwd(), "driver", "win", "geckodriver.exe") -> win 
     # bw_dir = r"C:\Program Files\Mozilla Firefox\firefox.exe" -> win
-    dv_dir = os.path.join(os.getcwd(), "driver", "linux", "geckodriver")
-    bw_dir = r"usr/bin/firefox"
-    cp_dir = os.path.join(os.getcwd())
+    
+    dv_dir = os.path.join(os.getcwd(), "driver", "linux", "geckodriver") # dv_dir Путь до webdriver - а
+    bw_dir = r"usr/bin/firefox" # Путь до браузера
+    cp_dir = os.path.join(os.getcwd()) # Рабочий каталон
+    
     
     service = Service(executable_path=dv_dir, port=randint(1000, 10000))
     
@@ -27,20 +30,21 @@ def parser_excel(cad_num: str, bot: telebot.TeleBot, chat_id: int, message_id: i
     options.binary_location = bw_dir
     options.add_argument('--headless')
     
-    driver = webdriver.Firefox(service=service, options=options)
+    driver = webdriver.Firefox(service=service, options=options) # иницилизация драйвера браузера
     
     bot.send_message(chat_id, "Начинаю обработку. Ожидайте...")
     
-    URL = "https://lk.rosreestr.ru/eservices/real-estate-objects-online"
-    driver.maximize_window()
-    driver.get(URL)
-    date_start = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
+    URL = "https://lk.rosreestr.ru/eservices/real-estate-objects-online" # Ссылка на страницу росреестра
+    driver.maximize_window() # Открывть браузер в макс ширину
+    driver.get(URL) # Отервать страницу росреестра
     mess_id = message_id + 2
     errs = ''
     try:
         i = 0
         bot.send_message(chat_id, f"Обработано кад. номеров: {i} из {len(cad_num)}")
         time.sleep(10)
+        
+        # Проходимся по кад номерам и проверям - если уже есть данные в поле "mess" то пропускаем цикл
         for numbers in cad_num:
             if (numbers['mess'] != ''): 
                 if(numbers['mess'] != 'nan'):
@@ -48,25 +52,28 @@ def parser_excel(cad_num: str, bot: telebot.TeleBot, chat_id: int, message_id: i
                     bot.edit_message_text(f"Обработано кад. номеров: {i} из {len(cad_num)}\nКад. номер: {numbers['cad_num']}", chat_id, mess_id)
                     continue
             
-            
-            
-            with open(cp_dir + "/cp.png", 'wb') as file:
+            # Скачиваем фотографию капчи
+            cp_name = f"{cp_dir}/{randint(100000, 999999)}.png" 
+            with open(cp_name, 'wb') as file:
                 l = driver.find_element(By.XPATH, '//*[@alt="captcha"]')
                 file.write(l.screenshot_as_png)
             
-            captcha = anticaptcha.solve_captcha(cp_dir + "/cp.png", bot, chat_id)
+            captcha = anticaptcha.solve_captcha(cp_name, bot, chat_id)
             if(captcha == False):
-                return False
-            
+                os.remove(cp_name)
+                return
             captch_input = driver.find_element(By.ID, "captcha")
             captch_input.clear()
             captch_input.send_keys(captcha)
             
+            # После решения капчи удаляем фотографию
+            os.remove(cp_name)
             
             cad_input = driver.find_element(By.ID, "query")
             cad_input.clear()
             cad_input.send_keys(numbers["cad_num"])
             
+            # Если не удалось решить капчу пропускаем ход
             err = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-message--error")
             if(len(err) != 0):
                 i += 1
@@ -93,6 +100,7 @@ def parser_excel(cad_num: str, bot: telebot.TeleBot, chat_id: int, message_id: i
             
             card = driver.find_elements(By.CLASS_NAME, "build-card-wrapper__info")
             
+            # Заполняем словарь данными из карточки обьекта
             mess = ""
             for elem in card:
                 h3 = elem.find_element(By.TAG_NAME, "h3").text
@@ -118,12 +126,15 @@ def parser_excel(cad_num: str, bot: telebot.TeleBot, chat_id: int, message_id: i
             bot.edit_message_text(f"Обработано кад. номеров: {i} из {len(cad_num)}\nКад. номер: {numbers['cad_num']}", chat_id, mess_id)
             time.sleep(3)
         
-        return {
+        data = {
             "data": cad_num,
             "start": date_start,
             "end": datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
             "errs": errs
             }
+        
+        # Пишем excel файл
+        xls.write_excel(filename, data, bot, chat_id, mess_id)
     except Exception as ex:
         markup = types.InlineKeyboardMarkup()
         dow_btn = types.InlineKeyboardButton('Скачать', callback_data='download')
@@ -148,17 +159,20 @@ def parser_excel(cad_num: str, bot: telebot.TeleBot, chat_id: int, message_id: i
         driver.quit()
 
 
-def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
-    # os.path.join(os.getcwd(), "driver", "win", "geckodriver.exe") -> windows path
-    dv_dir = os.path.join(os.getcwd(), "driver", "linux", "geckodriver")
-    # r"C:\Program Files\Mozilla Firefox\firefox.exe" -> windows paht
-    # bw_dir = r"usr/bin/firefox"
+
+def parse_txt(cad_num: str, bot: TeleBot, message: types.Message):
+    date_start = datetime.now().strftime("%d.%m.%Y %H:%M:%S") 
+    # dv_dir = os.path.join(os.getcwd(), "driver", "win", "geckodriver.exe") -> win 
+    # bw_dir = r"C:\Program Files\Mozilla Firefox\firefox.exe" -> win
+    
+    dv_dir = os.path.join(os.getcwd(), "driver", "linux", "geckodriver") 
+    bw_dir = r"usr/bin/firefox"
     cp_dir = os.path.join(os.getcwd())
     
     service = Service(executable_path=dv_dir, port=randint(1000, 10000))
     
     options = webdriver.FirefoxOptions()
-    # options.binary_location = bw_dir
+    options.binary_location = bw_dir
     options.add_argument('--headless')
     
     driver = webdriver.Firefox(service=service, options=options)
@@ -169,21 +183,22 @@ def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
     chat_id = message.chat.id
     bot.send_message(chat_id, "Начинаю обработку. Ожидайте...")
     mess_id = message.message_id + 1
-    date_start = datetime.now().strftime("%d.%m.%Y %H:%M:%S")
     try: 
         time.sleep(10)
-    
-        with open(cp_dir + "/cp.png", 'wb') as file:
+        cp_name = f"{cp_dir}/{randint(100000, 999999)}.png" 
+        with open(cp_name, 'wb') as file:
             l = driver.find_element(By.XPATH, '//*[@alt="captcha"]')
             file.write(l.screenshot_as_png)
         
-        captcha = anticaptcha.solve_captcha(cp_dir + "/cp.png", bot, chat_id)
+        captcha = anticaptcha.solve_captcha(cp_name, bot, chat_id)
         if(captcha == False):
+            os.remove(cp_name)
             return
         captch_input = driver.find_element(By.ID, "captcha")
         captch_input.clear()
         captch_input.send_keys(captcha)
         
+        os.remove(cp_name)
         
         cad_input = driver.find_element(By.ID, "query")
         cad_input.clear()
@@ -232,7 +247,11 @@ def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
                         mess += f"<b>{val.text}</b>\n"
         
         mess += f"""\nНачало обработки: {date_start}\nКонец обработки: {datetime.now().strftime("%d.%m.%Y %H:%M:%S")}\nБаланс антикапчи: {anticaptcha.get_balance()} $"""
-        return mess.strip()
+        bot.send_message(message.chat.id, mess.strip(), parse_mode='html')
+        bot.delete_message(message.chat.id, message.message_id - 2)
+        bot.delete_message(message.chat.id, message.message_id - 1)
+        bot.delete_message(message.chat.id, message.message_id)
+        bot.delete_message(message.chat.id, message.message_id + 1)
     except sl_exps.TimeoutException as err:
         bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает", chat_id)
         log.write(f"{err.msg} | {__file__}")
@@ -241,7 +260,7 @@ def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
         bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает", chat_id)
         log.write(f"{err.msg} | {__file__}")
     except telebot.apihelper.ApiTelegramException as err:
-        bot.send_message(chat_id, "Ошибка при работе бота. Повторите попытку...")
+        bot.send_message(message.chat.id, "Ошибка! Не удалось удалить ранее отправленные сообщения")
         log.write(f"{err.description} | {__file__}")
         
     finally:

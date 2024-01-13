@@ -1,15 +1,17 @@
-import pandas
 from openpyxl import load_workbook, styles
-from pprint import pprint as pp
-import cd_parser
-import telebot
-from telebot import types
+from telebot import types, TeleBot
+
+import threading
 import pathlib
-import anticaptcha
+import pandas
 import os
 import re
+
+import anticaptcha
+import cd_parser
 import log
-def read_xls(doc: str, bot: telebot.TeleBot, mess: types.Message):
+
+def read_xls(doc: str, bot: TeleBot, mess: types.Message):
     try:
         sheet_1 = pandas.read_excel(doc, sheet_name='Раздел 1').to_dict()
         sheet_2_dict = pandas.read_excel(doc, sheet_name='Раздел 7').to_dict()
@@ -47,8 +49,7 @@ def read_xls(doc: str, bot: telebot.TeleBot, mess: types.Message):
         
         
         
-        data = cd_parser.parser_excel(cad_nums, bot, message_id=mess.message_id, chat_id=mess.chat.id, filename=doc)
-        if (data != False): write_excel(doc, data, bot, mess.chat.id, mess.message_id)
+        threading.Thread(target=cd_parser.parser_excel , args=(cad_nums, bot, mess.chat.id, mess.message_id, doc)).run()
     except KeyError as err:
         log.write(f"Key error: {err} | {__file__}")
         bot.send_message(mess.chat.id, "Ошибка при обротке файла. Провертье файл на корректность")
