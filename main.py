@@ -1,15 +1,15 @@
-from telebot import types
-import telebot
 from random import randint
+from telebot import types
+
+import telebot
 import pathlib
 import os
 import threading
 
-from xls import read_xls
+import xls
 import cd_parser
-import log
 
-TOKEN = "6515677811:AAHkKLo0aut9ALH63Izk5WzsauV97W9p6JY"
+TOKEN = "6598793377:AAHLUTUCdnNZd-vxrxjTT5bIM2PXyGaaRwU"
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 
@@ -17,7 +17,6 @@ bot = telebot.TeleBot(TOKEN, parse_mode=None)
 def send_welcome(message: types.Message):
     bot.send_message(message.chat.id, "Введите кадастровый номер или вставьте excel файл Р1Р7", reply_markup=create_buttons())        
  
-
 @bot.message_handler(content_types=['document'])
 def send_obj_info_by_doc(doc: types.Message):
     file_name = doc.document.file_name
@@ -31,11 +30,9 @@ def send_obj_info_by_doc(doc: types.Message):
         with open(file_dir, "wb") as file:
             file.write(downloaded_file)
         file.close()
-        read_xls(file_dir, bot, doc)
+        threading.Thread(target=xls.read_xls, args=(file_dir, bot, doc)).run()
     else:
         bot.send_message(doc.chat.id, 'Не поддерживаемый тип файла!\nПожалуйста загрузите файлы с расширением: <b>.xls</b> или <b>.xlsx</b>', parse_mode='html')
-
-
 
 @bot.message_handler(content_types=['text'])
 def btns_handler(message: types.Message):
@@ -46,22 +43,17 @@ def btns_handler(message: types.Message):
         bot.send_message(message.chat.id, "Введите кадастровый номер")
     else:
         cad_num = message.text
-        mess = cd_parser.parse_txt(cad_num, bot, message)
-        bot.send_message(message.chat.id, mess, parse_mode='html')
-        try:
-            bot.delete_message(message.chat.id, message.message_id - 2)
-            bot.delete_message(message.chat.id, message.message_id - 1)
-            bot.delete_message(message.chat.id, message.message_id)
-            bot.delete_message(message.chat.id, message.message_id + 1)
-        except telebot.apihelper.ApiTelegramException as err:
-            bot.send_message(message.chat.id, "Ошибка! Не удалось удалить ранее отправленные сообщения")
-            log.write(f"{err.description} | {__file__}")
+        threading.Thread(target=cd_parser.parse_txt, args=(cad_num, bot, message)).run()
+        
 def create_buttons():
     markup = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     excel = types.KeyboardButton('Парсинг карточек ЕГРН')
     text = types.KeyboardButton('Ввод кад. номера')
     markup.add(excel, text)
     return markup
+
+
+
 
 bot.infinity_polling()
 
