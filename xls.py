@@ -1,15 +1,13 @@
 from openpyxl import load_workbook, styles
-from telebot import types
-
+from pprint import pprint as pp
+import cd_parser
 import telebot
+from telebot import types
 import pathlib
 import pandas
 import os
 import re
-
 import log
-import cd_parser
-
 def read_xls(doc: str, bot: telebot.TeleBot, mess: types.Message):
     try:
         # Читает 1 и 7 раздел и конвертирует их в словарь
@@ -54,6 +52,8 @@ def read_xls(doc: str, bot: telebot.TeleBot, mess: types.Message):
         # Парсит росреестр (см. cd_parser.py)
         cd_parser.parse_excel(cad_nums, bot, mess, doc)
         
+        data = cd_parser.parser_excel(cad_nums, bot, message_id=mess.message_id, chat_id=mess.chat.id, filename=doc)
+        if (data != False): write_excel(doc, data, bot, mess.chat.id, mess.message_id)
     except KeyError as err:
         log.write(f"Key error: {err} | {__file__}")
         bot.send_message(mess.chat.id, "Ошибка при обротке файла. Провертье корректность файла")

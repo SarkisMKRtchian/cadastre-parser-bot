@@ -62,5 +62,3 @@ def solve_captcha(captcha_src: str, bot: telebot.TeleBot, chat_id: int):
 ### **Ввод кад. номера**
 Отправтье боту кадастровый номер и ождийте. Бот соберет всю информацию о **здании**, **обьекте** итд... и отправит вам информацию в виде текста
 
-cadatre-parser-bot
-# meinfoonlinerr_bot
