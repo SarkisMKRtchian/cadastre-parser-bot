@@ -1,0 +1,5 @@
+pip install pandas
+pip install pyTelegramBotAPI
+pip install selenium
+pip install openpyxl
+pip install anticaptchaofficial
