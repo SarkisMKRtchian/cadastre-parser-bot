@@ -3,6 +3,7 @@ from telebot import types
 
 import telebot
 import pathlib
+import sys
 import os
 import threading
 
@@ -41,6 +42,7 @@ def btns_handler(message: types.Message):
     
     elif(message.text == 'Ввод кад. номера'):
         bot.send_message(message.chat.id, "Введите кадастровый номер")
+    
     else:
         cad_num = message.text
         threading.Thread(target=cd_parser.parse_txt, args=(cad_num, bot, message)).run()

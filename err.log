@@ -1,1 +1,62 @@
 
+15.01.2024 03:29:31 | Message: Unable to locate element: //*[@alt="captcha"]; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 03:30:30 | Message: Unable to locate element: //*[@alt="captcha"]; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 03:31:10 | Message: Unable to locate element: //*[@alt="captcha"]; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 03:41:42 | Message: Unable to locate element: //*[@alt="captcha"]; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 03:42:16 | Message: Unable to locate element: //*[@alt="captcha"]; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 03:45:49 | Message: Unable to locate element: //*[@alt="captcha"]; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 03:54:30 | Message: Unable to locate element: //*[@alt="captcha"]; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#no-such-element-exception
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 04:53:03 | Bad Request: message to delete not found | mess_id: 822 | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 05:35:24 | Message: 
+Stacktrace:
+RemoteError@chrome://remote/content/shared/RemoteError.sys.mjs:8:8
+WebDriverError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:187:5
+NoSuchElementError@chrome://remote/content/shared/webdriver/Errors.sys.mjs:505:5
+element.find/</<@chrome://remote/content/marionette/element.sys.mjs:135:16
+ | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 06:09:51 | ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')) | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 06:26:11 | ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')) | /home/sarkis/Desktop/cadastre-parser-bot/cd_parser.py
+15.01.2024 06:35:11 | list indices must be integers or slices, not str | /home/sarkis/Desktop/cadastre-parser-bot/xls.py
+15.01.2024 06:38:23 | list indices must be integers or slices, not str | /home/sarkis/Desktop/cadastre-parser-bot/xls.py

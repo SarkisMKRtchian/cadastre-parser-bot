@@ -3,10 +3,13 @@ from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from telebot import types
 from datetime import datetime
 from random import randint
 from urllib3.exceptions import MaxRetryError
+from requests.exceptions import ReadTimeout
 
 import selenium.common.exceptions as sl_exps 
 import anticaptcha
@@ -35,11 +38,12 @@ def parse_excel(cad_nums: str, bot: telebot.TeleBot, message: types.Message, fil
     # Настройка браузера
     options = webdriver.FirefoxOptions()
     options.binary_location = bw_dir
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     
     driver = webdriver.Firefox(service=service, options=options)
-    driver.maximize_window()
+    wait = WebDriverWait(driver, 500)
     # Открывает сайт росреестра
+    driver.maximize_window()
     driver.get(URL)
     
     # Иттерация
@@ -48,7 +52,7 @@ def parse_excel(cad_nums: str, bot: telebot.TeleBot, message: types.Message, fil
     cad_nums_processed = 0
     try:
         
-        time.sleep(10)
+        wait.until(EC.element_attribute_to_include((By.XPATH, '//*[@alt="captcha"]'), "src"))
         
         processed = bot.send_message(chat_id, f"Обработано кад. номеров: {i} из {len(cad_nums)}")
         pr_id = processed.message_id
@@ -92,32 +96,44 @@ def parse_excel(cad_nums: str, bot: telebot.TeleBot, message: types.Message, fil
             # Вводит капчу
             captch_input = driver.find_element(By.ID, "captcha")
             captch_input.clear()
-            captch_input.send_keys(captcha)
-            
-            # Удаляет изб. капчи
+            for letter in captcha:
+                captch_input.send_keys(letter)
+                time.sleep(0.2)
+            # удаляет изб. капчи
             os.remove(cp_name)
             
             # Вводит кад. номер
             cad_input = driver.find_element(By.ID, "query")
             cad_input.clear()
-            cad_input.send_keys(cad_num["cad_num"])
-            
-            # Проверка валид. капчи, если капча не правильная, то обновляет капчу и пропускает иттерацию
-            err = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-message--error")
-            if(len(err) != 0):
-                i += 1
-                processed_failure.append(cad_num['cad_num'])
-                driver.find_element(By.CLASS_NAME, "rros-ui-lib-captcha-content-reload-btn").click()
-                time.sleep(3)
-                continue
+            for letter in cad_num['cad_num']:
+                cad_input.send_keys(letter)
+                time.sleep(0.2)
                     
-            time.sleep(1)
-            
+            # Клик чтобы сбросить фокус с поля ввода
+            driver.find_element(By.TAG_NAME, "body").click()
             # Нажимает на кнопку поиск
-            sch_btn = driver.find_element(By.ID, "realestateobjects-search")                    
+            sch_btn = driver.find_element(By.ID, "realestateobjects-search")      
+            
             sch_btn.click()
             
-            time.sleep(3)
+            # Проверка валид. капчи, если капча не правильная выходит из фнукции
+            err = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-message--error")
+            if(len(err) != 0):
+                if(err[0].text == "Текст введен неверно"):
+                    i += 1
+                    processed_failure.append(cad_num['cad_num'])
+                    bot.edit_message_text(f"Обработано кад. номеров: {i} из {len(cad_nums)}\nКад. номер: {cad_num['cad_num']}", chat_id, pr_id)
+                    driver.find_element(By.CLASS_NAME, "rros-ui-lib-captcha-content-reload-btn").click()
+                    time.sleep(3)
+                    continue
+            
+            
+            searching = True
+            while searching:
+                spinner = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-spinner__wrapper")
+                if(len(spinner) == 0):
+                    searching = False
+                time.sleep(1)
             
             # Проверка ошибок на сайте росреестра
             search_err = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-error-title")
@@ -132,7 +148,10 @@ def parse_excel(cad_nums: str, bot: telebot.TeleBot, message: types.Message, fil
             if(len(card_btn) == 0):
                     cad_num['mess'] = ''
                     i += 1
+                    driver.find_element(By.CLASS_NAME, "rros-ui-lib-captcha-content-reload-btn").click()
+                    bot.edit_message_text(f"Обработано кад. номеров: {i} из {len(cad_nums)}\nКад. номер: {cad_num['cad_num']}", chat_id, pr_id)
                     processed_failure.append(cad_num['cad_num'])
+                    time.sleep(3)
                     continue
                 
             card_btn[0].click()
@@ -202,13 +221,23 @@ def parse_excel(cad_nums: str, bot: telebot.TeleBot, message: types.Message, fil
         parse_excel(cad_nums, bot, edt)
         remove_messages(bot, chat_id, remove_messages_id)
         
+    except ReadTimeout as err:
+        driver.close()
+        driver.quit()
+        
+        log.write(f"{err} | {__file__}")
+        
+        bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает из-за слабого интернет соеденения")
+        
+        remove_messages(bot, chat_id, remove_messages_id)
+        
     except sl_exps.TimeoutException as err:
         driver.close()
         driver.quit()
         
         log.write(f"{err.msg} | {__file__}")
         
-        err_mess = bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает", chat_id)
+        err_mess = bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает")
 
         remove_messages(bot, chat_id, remove_messages_id)
         if(cad_nums_processed > 0): 
@@ -221,7 +250,7 @@ def parse_excel(cad_nums: str, bot: telebot.TeleBot, message: types.Message, fil
         
         log.write(f"{err.msg} | {__file__}")
         
-        err_mess = bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает", chat_id)
+        err_mess = bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает")
         
         remove_messages(bot, chat_id, remove_messages_id)
         if(cad_nums_processed > 0): 
@@ -264,24 +293,24 @@ def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
     # Настройка браузера
     options = webdriver.FirefoxOptions()
     options.binary_location = bw_dir
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     
     driver = webdriver.Firefox(service=service, options=options)
-    driver.maximize_window()
+    wait = WebDriverWait(driver, 500)
     # Открывает сайт росреестра
+    driver.maximize_window()
     driver.get(URL)
     
     # id сообщений которые надо удалять
     remove_messages_id = [message.message_id - 2, message.message_id - 1, message.message_id, start_work.message_id]
     try: 
-        time.sleep(10)
+        wait.until(EC.element_attribute_to_include((By.XPATH, '//*[@alt="captcha"]'), "src"))
         # Проверка ошибок на сайте росреестра
         reestr_err = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-error-title")
         if(len(reestr_err) > 0):
             remove_messages(bot, chat_id, remove_messages_id)
             bot.send_message(chat_id, f"Внимание! Справка Росреестра выдаёт ошибку. Проверьте работу справки по ссылке\n{URL}\nОшибка: {reestr_err[0].text}")
             return
-        
         # Скачивает изб. капчи и сохраняет под рандомным номером
         cp_name = f"{cp_dir}/{randint(1, 1000)}.png" 
         with open(cp_name, 'wb') as file:
@@ -299,31 +328,44 @@ def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
         # Вводит капчу
         captch_input = driver.find_element(By.ID, "captcha")
         captch_input.clear()
-        captch_input.send_keys(captcha)
+        for letter in captcha:
+            captch_input.send_keys(letter)
+            time.sleep(0.2)
         # удаляет изб. капчи
         os.remove(cp_name)
         
         # Вводит кад. номер
         cad_input = driver.find_element(By.ID, "query")
         cad_input.clear()
-        cad_input.send_keys(cad_num)
+        for letter in cad_num:
+            cad_input.send_keys(letter)
+            time.sleep(0.2)
+
+                
+        # Клик чтобы сбросить фокус с поля ввода
+        driver.find_element(By.TAG_NAME, "body").click()
+        # Нажимает на кнопку поиск
+        sch_btn = driver.find_element(By.ID, "realestateobjects-search")      
+        
+        sch_btn.click()
         
         # Проверка валид. капчи, если капча не правильная выходит из фнукции
         err = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-message--error")
         if(len(err) != 0):
-            bot.edit_message_text("Ошибка! Не удалось решить капчу....\n\nПовторите попытку...", chat_id, start_work.message_id)
-            
-            remove_messages(bot, chat_id, [message.message_id - 2, message.message_id - 1, message.message_id])
-            
-            return
+            if(err[0].text == "Текст введен неверно"):
+                bot.edit_message_text("Ошибка! Не удалось решить капчу....\n\nПовторите попытку...", chat_id, start_work.message_id)
                 
-        time.sleep(1)
+                remove_messages(bot, chat_id, [message.message_id - 2, message.message_id - 1, message.message_id])
+                
+                return
         
-        # Нажимает на кнопку поиск
-        sch_btn = driver.find_element(By.ID, "realestateobjects-search")      
-        sch_btn.click()
         
-        time.sleep(3)
+        searching = True
+        while searching:
+            spinner = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-spinner__wrapper")
+            if(len(spinner) == 0):
+                searching = False
+            time.sleep(1)
         
         # Проверка ошибок на сайте росреестра
         search_err = driver.find_elements(By.CLASS_NAME, "rros-ui-lib-error-title")
@@ -378,7 +420,7 @@ def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
         
         log.write(f"{err} | {__file__}")
         
-        bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает", chat_id)
+        bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает")
         
         remove_messages(bot, chat_id, remove_messages_id)
         
@@ -388,7 +430,17 @@ def parse_txt(cad_num: str, bot: telebot.TeleBot, message: types.Message):
         
         log.write(f"{err} | {__file__}")
         
-        bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает", chat_id)
+        bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает")
+        
+        remove_messages(bot, chat_id, remove_messages_id)
+        
+    except ReadTimeout as err:
+        driver.close()
+        driver.quit()
+        
+        log.write(f"{err} | {__file__}")
+        
+        bot.send_message(chat_id, "Ошибка! Сайт росреестра не отвечает из-за слабого интернет соеденения")
         
         remove_messages(bot, chat_id, remove_messages_id)
         

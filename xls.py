@@ -87,15 +87,16 @@ def write_excel(file: str, data: dict, bot: telebot.TeleBot, chat_id: int):
         wb.save(f_name)
         wb.close()
         
+        errs = ''
+        # Еасли во время парсинга какие-то кн не удалось обрабротать, то записываем их в сообщение (см. cd_parser.py)
+        if(len(data['processed_failure']) > 0):
+            errs += 'При обработке следующих кад номеров произошла ошибка:\n'
+            for cn in data['processed_failure']:
+                errs += f"{cn}\n"
         # Открывает файл
         with open(f_name, "rb") as f:
-            errs = 'При обработке следующих кад номеров произошла ошибка:\n'
-            # Еасли во время парсинга какие-то кн не удалось обрабротать, то записываем их в сообщение (см. cd_parser.py)
-            if(len(data['processed_failure']) > 0):
-                for i in data['processed_failure']:
-                    errs = f"{data['processed_failure'][i]}\n"
             # Отправляет файл
-            bot.send_document(chat_id, f, caption=f"{adress}\nC {data['start']} по {data['end']} = {data['time_for_one_card']} сек/КН\n{data['processed']}\n${errs}")
+            bot.send_document(chat_id, f, caption=f"{adress}\nC {data['start']} по {data['end']} = {data['time_for_one_card']} сек/КН\n{data['processed']}\n{errs}")
             f.close()
         # Удаляет файл
         os.remove(f_name)
