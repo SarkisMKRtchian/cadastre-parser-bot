@@ -2,7 +2,7 @@ from anticaptchaofficial.imagecaptcha import *
 import telebot
 import log
 def solve_captcha(captcha_src: str, bot: telebot.TeleBot, chat_id: int):
-    API_KEY = "178480a4f2942503ca93d0836d11f2cb"
+    API_KEY = "YOUR_API_KEY"
     solver = imagecaptcha()
     
     solver.set_verbose(1)
