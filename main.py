@@ -10,7 +10,7 @@ import threading
 import xls
 import cd_parser
 
-TOKEN = "6598793377:AAHLUTUCdnNZd-vxrxjTT5bIM2PXyGaaRwU"
+TOKEN = "YOUR_TOKEN"
 bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 
