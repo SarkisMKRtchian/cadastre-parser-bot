@@ -1,8 +1,15 @@
 from anticaptchaofficial.imagecaptcha import *
-import telebot
+from telebot import TeleBot
+from dotenv import load_dotenv
+
+import os
+
 import log
-def solve_captcha(captcha_src: str, bot: telebot.TeleBot, chat_id: int):
-    API_KEY = "178480a4f2942503ca93d0836d11f2cb"
+
+
+def solve_captcha(captcha_src: str, bot: TeleBot, chat_id: int):
+    load_dotenv()
+    API_KEY = os.getenv("CAPTCHA_API_KEY")
     solver = imagecaptcha()
     
     solver.set_verbose(1)
