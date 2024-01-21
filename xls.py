@@ -12,25 +12,13 @@ import re
 import log
 
 class Excel:
-    """
-    Класс для обработки excel файла
-    """
+    
     def __init__(self, bot: TeleBot, parser: ParseExcel) -> None:
         self.bot = bot
         self.parser = parser
         
     def read(self, filePath: str, message: types.Message):
-        """
-        Открывает excel файл и забирает из него след. информацию
-        Из Раздела 1
-        КН здания
-        Номер строки и колонки на котором расположен КН и где надо будет вставить обработаный текст
-        КН зем. участка если имеется
-        Из Раздела 2 
-        Во первых удаляет все ключи, потому что они могут отличатся
-        Далее проверят заполнены ли какие-то данные в яйчейке где должен лежать обработаный текст, если да то забирает отуда текст а если нет то оставляет пустую строку(Раздел 1 так же)
-        После собраный обьект передает парсеру для обработки
-        """
+        
         try:
             sheet1 = pandas.read_excel(filePath, sheet_name='Раздел 1').to_dict()
             sheet2Dict = pandas.read_excel(filePath, sheet_name='Раздел 7').to_dict()
@@ -75,9 +63,7 @@ class Excel:
             os.remove(filePath)
             
     def write(self, filePath: str, data: dict, chatId: int):
-        """
-        Пишет xls файл
-        """
+        
         try:
             wb = load_workbook(filePath, data_only=True)
             
