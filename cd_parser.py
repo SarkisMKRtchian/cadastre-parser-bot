@@ -143,16 +143,12 @@ class Parse:
         
         inputCaptcha = browser.find_element(By.ID, "captcha")
         inputCaptcha.clear()
-        for letter in captcha:
-            inputCaptcha.send_keys(letter)
-            time.sleep(0.2)
+        inputCaptcha.send_keys(captcha)
             
             
         inputCadNum = browser.find_element(By.ID, "query")
         inputCadNum.clear()
-        for letter in cadNum:
-            inputCadNum.send_keys(letter)
-            time.sleep(0.2)
+        inputCadNum.send_keys(cadNum)
 
                 
         
@@ -177,7 +173,7 @@ class Parse:
             spinner = browser.find_elements(By.CLASS_NAME, "rros-ui-lib-spinner__wrapper")
             if(len(spinner) == 0):
                 searching = False
-            time.sleep(1)
+            time.sleep(0.1)
         
         
         searchErr = browser.find_elements(By.CLASS_NAME, "rros-ui-lib-error-title")
@@ -197,7 +193,6 @@ class Parse:
             
         
         cardBtn[0].click()
-        time.sleep(1)
         card = browser.find_elements(By.CLASS_NAME, "build-card-wrapper__info")
         
         
@@ -242,13 +237,14 @@ class ParseTxt(Parse):
         try:
             startTime = time.time()
             dltMessages = [message.message_id - 2, message.message_id - 1, message.message_id]
-            startProcessingMess = self.bot.send_message(message.chat.id, f"Начинаю обработку. Ожидайте...\nДата начала обработки: {time.strftime('%H:%M:%S', time.localtime(startTime))}\nБаланс антикапчи: {anticaptcha.get_balance()} $")
+            balance = anticaptcha.get_balance()
+            startProcessingMess = self.bot.send_message(message.chat.id, f"Начинаю обработку. Ожидайте...\nДата начала обработки: {time.strftime('%H:%M:%S', time.localtime(startTime))}\nБаланс антикапчи: {balance} $")
             browser = self.browser()
             parse = self.parseReestr(browser, cadNum, message.chat.id)
             
             if(parse['status']):
-                endTime = time.time()
                 result = parse['mess']
+                endTime = time.time()
                 resMessage = f"{result}\n\nОбработка карточки заняло: {round(endTime - startTime, 1)} сек"
                 self.bot.send_message(message.chat.id, resMessage, parse_mode='html')
             else:
@@ -319,11 +315,13 @@ class ParseExcel(Parse):
         try:
             startTime = time.time()
             stopBtn = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton('Отменить', callback_data='stop'))
-            startProcessingMess = self.bot.send_message(message.chat.id, f"Начинаю обработку. Ожидайте...\nДата начала обработки: {time.strftime('%H:%M:%S', time.localtime(startTime))}\nБаланс антикапчи: {anticaptcha.get_balance()} $", reply_markup=stopBtn)
+            balance = anticaptcha.get_balance()
+            startProcessingMess = self.bot.send_message(message.chat.id, f"Начинаю обработку. Ожидайте...\nДата начала обработки: {time.strftime('%H:%M:%S', time.localtime(startTime))}\nБаланс антикапчи: {balance} $", reply_markup=stopBtn)
             browser = self.browser()
             
             processed = 0
             itteration = 0
+            captchaSloved = 0
             processedFailure = []
             processedMess = self.bot.send_message(message.chat.id, f"Обработано кад. номеров: {itteration} из {len(cadNums)}")
             
@@ -344,14 +342,17 @@ class ParseExcel(Parse):
                     cadNum['mess'] = parse['mess']
                     processed += 1
                     itteration += 1
+                    captchaSloved += 1
                 else:
+                    if(parse['mess'] != 'captcha input err'):
+                        captchaSloved += 1
                     processedFailure.append(cadNum['cadNum'])
                     itteration += 1
                     
                 self.bot.edit_message_text(f"Обработано кад. номеров: {itteration} из {len(cadNums)}\nКад. номер: {cadNum['cadNum']}", message.chat.id, processedMess.message_id)
             
-                
-            data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath)
+            
+            data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath, balance, captchaSloved)
             
             xlsx.write(filePath, data, message.chat.id)
             
@@ -374,7 +375,7 @@ class ParseExcel(Parse):
             
             if(processed > 0): 
                 self.bot.send_message(message.chat.id, f"Бот успел обработать {processed} из {len(cadNums)} КН. Хотите продолжить или скачать файл?", reply_markup=self.parseErrButtons())
-                data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath)
+                data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath, balance, captchaSloved)
                 self.crateJson(data)
             
         except sl_exps.NoSuchElementException as ex:
@@ -386,7 +387,7 @@ class ParseExcel(Parse):
             
             if(processed > 0): 
                 self.bot.send_message(message.chat.id, f"Бот успел обработать {processed} из {len(cadNums)} КН. Хотите продолжить или скачать файл?", reply_markup=self.parseErrButtons())
-                data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath)
+                data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath, balance, captchaSloved)
                 self.crateJson(data)
                 
         except Exception as ex:
@@ -395,10 +396,7 @@ class ParseExcel(Parse):
             
             if(processed > 0): 
                 self.bot.send_message(message.chat.id, f"Бот успел обработать {processed} из {len(cadNums)} КН. Хотите продолжить или скачать файл?", reply_markup=self.parseErrButtons())
-                print(152)
-                data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath)
-                print(data)
-                print(158)
+                data = self.createDataObj(cadNums, startTime, time.time(), processedFailure, processed, filePath, balance, captchaSloved)
                 self.crateJson(data)
             
         finally: 
@@ -426,7 +424,7 @@ class ParseExcel(Parse):
         with open(dir, 'w') as file:
             json.dump(data, file)
             
-    def createDataObj(self, cadNums: dict, startTime: float, endTime: float, processedFailure: list[str], processed: int, filePath: str):
+    def createDataObj(self, cadNums: dict, startTime: float, endTime: float, processedFailure: list[str], processed: int, filePath: str, balance: float, captchSloved: int):
         """
         Создает обьект для создании excel файла
         data - обработанные КН
@@ -436,15 +434,19 @@ class ParseExcel(Parse):
         processedFailure - Неудачно обработаные КН
         timeForOneCard - Среднее время обработки одной карточки (учитываются только успешно обработаные КН)
         processed - Кол-во успешно обработаных КН
+        cost - Стоимость капчи 
         fp - путь до excel файла для редактирования
         """
+        afterBalance = anticaptcha.get_balance()
+        timeForOneCard = round((endTime - startTime) / processed, 1) if processed != 0 else round(endTime - startTime, 1)
+        cost = balance - afterBalance
         return {
             "data": cadNums,
             "stoped": self.stop,
             "start": startTime,
             "end": endTime,
             "processedFailure": processedFailure,
-            "timeForOneCard": round((endTime - startTime) / processed, 1) if processed != 0 else round(endTime - startTime, 1),
-            "processed": f"Обработано КН: {processed} из {len(cadNums)}",
+            "processed": f"Обработано КН: {processed} из {len(cadNums)} (1кн: {timeForOneCard}c./{round((cost / captchSloved), 5)}$)",
+            "cost": round(cost, 5),
             "fp": filePath
         }

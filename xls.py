@@ -112,7 +112,7 @@ class Excel:
                 stop += "Обработка остановлена\n"
                 
             with open(fileName, "rb") as f:
-                self.bot.send_document(chatId, f, caption=f"{stop}{data['data'][0]['adress']}\nC {time.strftime('%H:%M:%S', time.localtime(data['start']))} по {time.strftime('%H:%M:%S', time.localtime(data['end']))} = {round(data['start'] - data['end'], 1)}сек\n{data['processed']} (1кн: {data['timeForOneCard']}c.)\n{errs}")
+                self.bot.send_document(chatId, f, caption=f"{stop}{data['data'][0]['adress']}\nC {time.strftime('%H:%M:%S', time.localtime(data['start']))} по {time.strftime('%H:%M:%S', time.localtime(data['end']))} = {round(data['start'] - data['end'], 1)}сек/{data['cost']} $\n{data['processed']}\n{errs}")
                 f.close()
             
             os.remove(fileName)

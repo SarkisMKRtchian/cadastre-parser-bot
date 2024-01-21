@@ -5,6 +5,7 @@ from random import randint
 import pathlib
 import os
 import json
+import re
 
 from xls import Excel
 
@@ -67,7 +68,11 @@ def btns_handler(message: types.Message):
     
     else:
         cadNum = message.text
-        parseTxt.parse(cadNum, message)
+        cadNumREGEXP = r"\d{2}:\d{2}"
+        if(re.match(cadNumREGEXP, cadNum)):
+            parseTxt.parse(cadNum, message)
+        else:
+            bot.send_message(message.chat.id, "Не корректный кадастровый номер!")
         
 
 
