@@ -11,9 +11,6 @@ from xls import Excel
 
 from cd_parser import ParseTxt, ParseExcel
 
-# Заранее изиняюсь за camelCase. Я JS разработчик и мне привычнее писать называние переменных в формате camelCase. Я знаю, что в питоне называние переменных пишут через _
-# массив/array - это list
-# обьект/obj - это dict
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
