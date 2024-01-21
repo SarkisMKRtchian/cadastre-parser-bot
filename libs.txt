@@ -5,9 +5,3 @@ pip install openpyxl
 pip install anticaptchaofficial
 pip install python-dotenv
 
-pip uninstall pandas
-pip uninstall pyTelegramBotAPI
-pip uninstall selenium
-pip uninstall openpyxl
-pip uninstall anticaptchaofficial
-
