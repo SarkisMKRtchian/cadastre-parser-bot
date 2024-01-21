@@ -15,8 +15,7 @@ def solve_captcha(captcha_src: str, bot: TeleBot, chat_id: int):
     solver.set_verbose(1)
     solver.set_key(API_KEY)
 
-    # Specify softId to earn 10% commission with your app.
-    # Get your softId here: https://anti-captcha.com/clients/tools/devcenter
+    
     solver.set_soft_id(0)
 
     balance = solver.get_balance()
