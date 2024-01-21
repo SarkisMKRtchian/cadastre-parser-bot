@@ -20,27 +20,16 @@ import re
 import log
 
 class Parse:
-    """
-    Класс Parse используется для парсинга сайта росреестра
-    """
+    
     def __init__(self, bot: TeleBot) -> None:
-        """
-        Принимает в параметры иницализиронного бота
-        .. code-block:: python3
-            self.isWork = False
-            # True если браузер открыт. Нужен для предотврашения вызовов во время работы
-            self.stop = False
-            # True если нажата кнопка "Остановить". Приннудительно остонавливает работы метода parseReestr
-        """
+        
+            
         self.bot = bot
         self.isWork = False
         self.stop = False
         
     def removeMessages(self, chatId: int, messageId: list[int]):
-        """
-        Принимает в параметры id чата и массив с id собшений которые надо удалить. Далее проходит по всем id собщений и удаляет их.
-        Если по какой-то причине не удалось удалить сообщение, то пишет в лог файл причину ошибки и пропускает иттерацию(err.log)
-        """
+        
         for i in range(len(messageId)):
             try:
                 self.bot.delete_message(chatId, messageId[i])
@@ -49,17 +38,6 @@ class Parse:
                 continue
             
     def browser(self):
-        """
-        Создает браузер, расширяет окно браузера на максимум и открывает сайт росреестра. 
-        .. code-block:: python3
-            dv_dir = os.path.join(os.getcwd(), "driver", "linux", "geckodriver")
-            # Путь до драйвера
-            bw_dir = r"/usr/lib/firefox-esr/firefox-esr"
-            # Путь до браузера
-            options.add_argument('--headless')
-            # Открывает брузер в фоновом режиме, тем самым расходуя меншье озу
-        
-        """
         self.isWork = True
         dv_dir = os.path.join(os.getcwd(), "driver", "linux", "geckodriver")
         bw_dir = r"/usr/lib/firefox-esr/firefox-esr"
@@ -76,29 +54,22 @@ class Parse:
         return driver
     
     def closeBrowser(self, browser: webdriver.Firefox):
-        """
-        Закрывает брузер
-        """
+        
         browser.close()
         browser.quit()
         self.isWork = False
     
     def browserWait(self, browser: webdriver.Firefox,by: Tuple[str, str], attr: str):
-        """
-        Ожидает отрисовки HTML тега на сайте
-        """
+        
         wait = WebDriverWait(browser, 500)
         wait.until(EC.element_attribute_to_include(by, attr))
 
     def url(self):
-        """Возвращает ссылку на страницу росреестра"""
+        
         return "https://lk.rosreestr.ru/eservices/real-estate-objects-online"
     
     def sloveCaptcha(self, browser: webdriver.Firefox, chatId: int):
-        """
-        Решает капчу. Сама капча принимает в аргументы фото капчи, бота, и id чата.
-        Если во время обработки произошла ошибка или на балансе недостаточно средств отправляет сообщение об ошибке и возвращает False
-        """
+        
         cpDir = os.path.join(os.getcwd(), f"{randint(1, 10)}.png") 
         with open(cpDir, 'wb') as file:
             cp = browser.find_element(By.XPATH, '//*[@alt="captcha"]')
@@ -111,16 +82,7 @@ class Parse:
         return captcha
     
     def parseReestr(self, browser: webdriver.Firefox, cadNum: str, chatId: int, isArray: bool = False):
-        """
-        Парсит сайт рореестра
-        в аргументы принимает 
-        browser - Дрйвер брузера
-        cadNum - Кадастровый номер
-        chatId - id чата для отправки сообщений
-        isArray - если парсинг работает в цикле то вместо после парсинга карточки нажимает на кнопку назад(на сайте)
-        
-        Возвращает карточку обьекта
-        """
+       
         if(isArray):
             backBtn = browser.find_elements(By.CLASS_NAME, "realestate-object-modal__btn")
             if(len(backBtn) > 0):
@@ -219,21 +181,13 @@ class Parse:
             
 
 class ParseTxt(Parse):
-    """
-    Парсинг КН по номеру(не xls документ)
-    """
+    
     def __init__(self, bot: TeleBot) -> None:
         super().__init__(bot)
         
     
     def parse(self, cadNum, message: types.Message):
-        """
-        .. code-block:: python3
-            startTime: float
-            # Время начала обработки
-            dltMessages: list[int] 
-            # id сообщений которые надо удалить
-        """
+        
         try:
             startTime = time.time()
             dltMessages = [message.message_id - 2, message.message_id - 1, message.message_id]
@@ -286,32 +240,12 @@ class ParseTxt(Parse):
             self.closeBrowser(browser)
             
 class ParseExcel(Parse):
-    """
-    Парсинг по xls документу 
-    """
+    
     def __init__(self, bot: TeleBot) -> None:
         super().__init__(bot)
         
     def parse(self, cadNums: dict, filePath: str, message: types.Message, xlsx):
-        """
-        .. code-block:: python3
-            startTime: float
-            # Дата начала обработки
-            processed: int
-            # Число успешно обработанных КН
-            itteration: int 
-            # Номер иттерации(независимо от того успешно обработался КН или нет)
-            processedFailure: list[str]
-            # Массив с КН которые не удалось обработать
-            dltMessages: list[int]
-            # id сообщений которые надо удалить
-            
-        При возникнавении ошибки проверят успел ли он что-то обработать (processed > 0), и если да и ошибка не связана с сайтом росреестра, то создает 
-        JSON файл и предлагает юзеру выбор
-        Продолжить работу или скачать
-        При первом варианте - Конвертирует JSON в dict и заускает метод заново и передает dict в аргументы
-        При втором варианте - Конвертирует JSON в dict и передает файл для сбора в excel(xls.py)
-        """
+        
         try:
             startTime = time.time()
             stopBtn = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton('Отменить', callback_data='stop'))
@@ -417,26 +351,13 @@ class ParseExcel(Parse):
         return markup
     
     def crateJson(self, data: dict):
-        """
-        Пишет JSON файл
-        """
+        
         dir = os.path.join(os.getcwd(), 'cadNums.JSON')
         with open(dir, 'w') as file:
             json.dump(data, file)
             
     def createDataObj(self, cadNums: dict, startTime: float, endTime: float, processedFailure: list[str], processed: int, filePath: str, balance: float, captchSloved: int):
-        """
-        Создает обьект для создании excel файла
-        data - обработанные КН
-        stoped - Был ли остановлен метод по нажатию кнопки Остановить
-        start - Время начала обработки
-        end - Время окончания обработки
-        processedFailure - Неудачно обработаные КН
-        timeForOneCard - Среднее время обработки одной карточки (учитываются только успешно обработаные КН)
-        processed - Кол-во успешно обработаных КН
-        cost - Стоимость капчи 
-        fp - путь до excel файла для редактирования
-        """
+        
         afterBalance = anticaptcha.get_balance()
         timeForOneCard = round((endTime - startTime) / processed, 1) if processed != 0 else round(endTime - startTime, 1)
         cost = balance - afterBalance
